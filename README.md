@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Nutrition Coach
 
-## Getting Started
+Upload a photo of your meal and get instant feedback from an AI nutritionist: a
+1–10 health score, estimated calories and macros, what's good, what to watch out
+for, and simple swaps to make it healthier.
 
-First, run the development server:
+Built with Next.js 16, Tailwind CSS 4 and a vision model on
+[Nebius Token Factory](https://docs.tokenfactory.nebius.com/api-reference/examples/vision-capabilities).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Getting started
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. Create an API key in [Nebius Token Factory](https://tokenfactory.nebius.com).
+2. Copy the env template and add your key:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+   ```bash
+   cp .env.example .env.local
+   # then set NEBIUS_API_KEY=... in .env.local
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. Install dependencies and start the dev server:
 
-## Learn More
+   ```bash
+   npm install
+   npm run dev
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+4. Open [http://localhost:3000](http://localhost:3000) and upload a food photo.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Configuration
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Variable         | Required | Description                                                                                                                                 |
+| ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NEBIUS_API_KEY` | yes      | Your Nebius Token Factory API key.                                                                                                          |
+| `NEBIUS_MODEL`   | no       | Vision model ID. Defaults to `google/gemma-3-27b-it`. Any `image2text` model from the [catalog](https://tokenfactory.nebius.com/models) works. |
 
-## Deploy on Vercel
+## How it works
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- [app/components/meal-analyzer.tsx](app/components/meal-analyzer.tsx) lets the user pick or drop a photo, resizes it in the browser to at most 1536px (JPEG), and submits it to a Server Action.
+- [app/actions.ts](app/actions.ts) validates the upload (JPEG/PNG/WebP, ≤ 4 MB) and converts it to a base64 data URL.
+- [lib/nebius.ts](lib/nebius.ts) sends the image to the Nebius OpenAI-compatible chat completions API with a dietitian system prompt that asks for a JSON answer.
+- [lib/meal-analysis.ts](lib/meal-analysis.ts) extracts and validates that JSON so the UI always gets a well-formed result.
+- [app/components/analysis-result.tsx](app/components/analysis-result.tsx) renders the score, nutrition estimates and feedback.
+- [app/components/markdown-text.tsx](app/components/markdown-text.tsx) formats the model's feedback text with [react-markdown](https://github.com/remarkjs/react-markdown), allowing only light formatting (bold, italics, inline code, simple lists) and dropping raw HTML.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Results are AI estimates from a single photo and are not medical advice.
